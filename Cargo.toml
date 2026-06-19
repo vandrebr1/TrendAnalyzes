@@ -1,0 +1,16 @@
+[package]
+name = "trend_analyzes"
+version = "0.1.0"
+edition = "2024"
+description = "Engine that collects and analyzes news/social data to detect trends using heuristics and statistics."
+license = "MIT"
+
+[dependencies]
+axum = "0.8.9"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls"] }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+tokio = { version = "1.52.3", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
