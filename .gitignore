@@ -1,4 +1,9 @@
-/target
+# Rust build artifacts (workspace root + nested crates)
+/target/
+**/target/
+
+# Rust tooling cache
+**/*.rs.bk
 
 # Local SQLite databases
 *.db
@@ -10,7 +15,21 @@
 # Environment / secrets
 .env
 .env.local
+.env.*.local
 
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+
+# IDE/editor metadata
+.idea/
+.vscode/
+*.suo
+*.user
+*.userossc
+*.sln.docstates
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
