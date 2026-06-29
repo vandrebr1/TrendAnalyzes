@@ -42,38 +42,6 @@ explainable, and maintainable**.
 - A C toolchain (provided automatically on Windows via the MSVC build tools;
   required by the bundled SQLite build)
 
-## Getting Started
-
-```bash
-# Build
-cargo build
-
-# Run (starts the HTTP server on http://127.0.0.1:3000)
-cargo run
-```
-
-Then, in another terminal:
-
-```bash
-curl http://127.0.0.1:3000/
-# -> Hello, Trend Analyzes!
-
-curl http://127.0.0.1:3000/health
-# -> {"status":"ok","service":"trend_analyzes","version":"0.1.0"}
-```
-
-### Logging
-
-Log verbosity is controlled by the `RUST_LOG` environment variable:
-
-```bash
-# Windows (PowerShell)
-$env:RUST_LOG="debug"; cargo run
-
-# Linux / macOS
-RUST_LOG=debug cargo run
-```
-
 ## Project Status
 
 🚧 **Early scaffolding.** This is the initial "hello world" skeleton: an Axum

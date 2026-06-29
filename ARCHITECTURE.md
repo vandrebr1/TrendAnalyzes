@@ -1,84 +1,115 @@
-# Architecture
+Trend Analyzer (Rust) — Microservices Architecture
 
-> This document describes the intended design of Trend Analyzes. Most of it is
-> **not yet implemented** — the current codebase is a minimal Axum skeleton.
-> Treat this as the roadmap that the modules should grow into.
+## Overview
 
-## Goals
+This document describes the intended microservices architecture for the
+"Trend Analyzer" project. It outlines component responsibilities, data flows,
+and integration points to guide implementation and operations.
 
-- **Transparent & explainable** — every detected trend traces back to concrete
-  term frequencies and rules, not an opaque model.
-- **Modular** — ingestion, processing, analysis, storage, and the API are
-  independent components with clear boundaries.
-- **Scalable** — continuous ingestion and asynchronous processing built on Tokio.
-- **Cost-effective** — heuristics and statistics instead of external ML services.
+---
 
-## High-Level Data Flow
+## 1. API Gateway (Controller)
 
-```
-                +-------------+      +--------------+      +------------------+
-  Sources  ---> |  Ingestion  | ---> |  Processing  | ---> |     Analysis     | ---> Trends
- (news,         | (collectors)|      | (normalize,  |      | (burst detection,|
-  forums,       +------+------+      |  tokenize,   |      |  co-occurrence,  |
-  social)              |             |  keyword     |      |  thresholds)     |
-                       |             |  extraction) |      +--------+---------+
-                       v             +------+-------+               |
-                  +---------+               |                       v
-                  | Storage | <-------------+----------------> +---------+
-                  | (SQLite)|                                  |   API   | (Axum)
-                  +---------+                                  +---------+
-```
+Purpose
+- Acts as the system entry point for client traffic.
+- Routes requests to the Analyze API or Trend API.
+- Performs authentication, authorization, validation, and request logging.
 
-## Planned Modules
+Responsibilities
+- Accept HTTP requests from front-end clients.
+- Forward validated requests to internal services and return their responses.
+- Do not implement business logic; only request coordination.
 
-| Module        | Responsibility                                                        |
-| ------------- | --------------------------------------------------------------------- |
-| `ingestion`   | Source collectors (HTTP via Reqwest), scheduling, rate limiting, dedup. |
-| `processing`  | Normalization, tokenization, keyword extraction, frequency counting.  |
-| `analysis`    | Burst detection, co-occurrence, rule-based thresholds, scoring.       |
-| `storage`     | SQLite access layer (rusqlite): documents, terms, time-series counts. |
-| `api`         | Axum HTTP layer exposing trends, health, and query endpoints.         |
-| `model`       | Shared domain types (Document, Term, Trend, TimeBucket).              |
+## 2. Analyze API
 
-## Concurrency Model
+Purpose
+- Provide an on-demand analysis interface for clients.
 
-- A multi-threaded Tokio runtime drives the whole process.
-- Ingestion collectors run as long-lived async tasks, one per source, feeding a
-  shared channel (`tokio::sync::mpsc`).
-- Processing consumes from that channel, transforms documents, and persists
-  term counts into SQLite.
-- Because rusqlite is **synchronous/blocking**, all DB access should run inside
-  `tokio::task::spawn_blocking` (or a dedicated blocking worker / connection
-  pool) to avoid stalling the async runtime.
-- The Axum API reads aggregated results from storage to serve trend queries.
+Responsibilities
+- Validate incoming request payloads.
+- Orchestrate calls to the Analyzer Service.
+- Format and return results to the client.
 
-## Trend Detection (Heuristics)
+Input/Output
+- Receives JSON requests with analysis parameters.
+- Returns structured analysis responses.
 
-1. **Time bucketing** — group term occurrences into fixed windows (e.g. hourly).
-2. **Frequency tracking** — maintain per-term counts per window.
-3. **Burst detection** — flag a term when its current-window frequency deviates
-   significantly from its recent baseline (e.g. a z-score or ratio threshold).
-4. **Co-occurrence** — track term pairs that spike together to surface topics
-   rather than isolated keywords.
-5. **Thresholds & scoring** — rule-based gates decide what qualifies as an
-   "emerging trend" and rank results.
+## 3. Analyzer Service (Core)
 
-## Storage Sketch (SQLite)
+Purpose
+- Implement the core processing pipeline for trend detection.
 
-Indicative tables (to be refined during implementation):
+Responsibilities
+- Coordinate data retrieval and collection.
+- Execute text processing, metric computation, and heuristic-based trend detection.
+- Return raw/structured results for the API to format.
 
-- `documents(id, source, url, fetched_at, content)`
-- `terms(id, term)`
-- `term_counts(term_id, bucket_start, count)` — the time series that powers burst detection
-- `cooccurrences(term_a, term_b, bucket_start, count)`
-- `trends(id, term_id, score, detected_at, window)`
+Processing flow
+1. Data validation: query the database and decide if additional data is required.
+2. Data collection (if needed): invoke the Collector Service.
+3. Data retrieval: read stored and newly collected data.
+4. Filtering: select items that match configured keywords or criteria.
+5. Text processing: normalize and tokenize content.
+6. Metric computation: compute mentions, growth rates, and statistical scores.
+7. Trend detection: apply heuristic rules to identify candidate trends.
 
-## Current vs. Planned
+Notes
+- The Analyzer Service produces internal raw results; the Analyze API is
+  responsible for shaping the final response returned to clients.
 
-| Component            | Status            |
-| -------------------- | ----------------- |
-| Axum server + health | ✅ Implemented     |
-| Ingestion            | ⬜ Planned         |
-| Processing           | ⬜ Planned         |
-| Analysis             | ⬜ Planned         |
-| Storage layer        | ⬜ Planned         |
+## 4. Trend API
+
+Purpose
+- Serve precomputed trends and associated metadata.
+
+Responsibilities
+- Query the storage layer for computed trends.
+- Apply filtering and sorting according to client parameters.
+- Return the final list of trends and metadata.
+
+## 5. Storage (Database)
+
+Purpose
+- Persist raw inputs, processed artifacts, and computed results.
+
+Responsibilities
+- Store collected posts, tokens, time-series term counts, trends, and job
+  configurations.
+- Serve data to the Analyzer Service, Trend API, and Scheduler.
+
+Example schema components
+- raw_posts (id, source, url, fetched_at, content)
+- tokens (post_id, token, position)
+- term_frequency (term_id, bucket_start, count)
+- trends (id, term_id, score, detected_at, window)
+- analysis_jobs (id, keywords, schedule, last_run)
+
+## 6. Collector Service
+
+Purpose
+- Fetch external content from sources such as RSS feeds and social platforms.
+
+Responsibilities
+- Execute scrapers and feed collectors (RSS, Reddit, etc.).
+- Parse and optionally pre-filter content by keywords.
+- Persist collected data to the database and return data to the Analyzer
+  Service when requested.
+
+## 7. Scheduler
+
+Purpose
+- Manage and trigger periodic analysis jobs.
+
+Responsibilities
+- Read configured jobs from the database (keywords, time range, interval).
+- Execute jobs on the configured schedule and invoke the Analyzer Service.
+
+## Overall flow
+
+Scheduler → Analyzer Service → Collector Service → Database → Analyzer Service → Database
+
+---
+
+If you want, I can now: commit this change, add a table-of-contents, or convert
+this to a more formal markdown layout with badges and links.
+

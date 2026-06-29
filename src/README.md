@@ -15,7 +15,7 @@ Run the two backend services locally:
 ### 1. Start `api-gateway`
 
 ```powershell
-cd C:\Users\rodohern\projects\TrendAnalyzes\src\api-gateway
+cd C:\..\TrendAnalyzes\src\api-gateway
 cargo build
 cargo run
 ```
@@ -23,7 +23,7 @@ cargo run
 ### 2. Start `analyze-api` (in another terminal)
 
 ```powershell
-cd C:\Users\rodohern\projects\TrendAnalyzes\src\analyze-api
+cd C:\..\TrendAnalyzes\src\analyze-api
 cargo build
 cargo run
 ```
