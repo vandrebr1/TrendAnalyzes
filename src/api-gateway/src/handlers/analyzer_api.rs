@@ -1,23 +1,14 @@
 use axum::{Json, http::StatusCode};
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
-use crate::clients::analyze_client::call_analyze_api;
+use crate::clients::analyze_api_client::call_analyze_api;
 use crate::handlers::error::ApiError;
 
-#[derive(Serialize, Deserialize, ToSchema)]
-pub struct AnalyzeRequest {
-    pub keywords: Vec<String>,
-}
+pub use crate::model::{AnalyzeRequest, AnalyzeResponse};
 
-#[derive(Serialize, Deserialize, ToSchema)]
-pub struct AnalyzeResponse {
-    pub trend_score: f64,
-}
 
 #[utoipa::path(
     post,
-    path = "/analyze",
+    path = "/analyze_api",
     request_body = AnalyzeRequest,
     responses(
         (status = 200, description = "Analyze result", body = AnalyzeResponse),

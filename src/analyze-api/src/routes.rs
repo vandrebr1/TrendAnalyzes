@@ -1,8 +1,8 @@
 use axum::{Router, routing::post};
 
-use crate::controller::analyze;
+use crate::handlers::analyzer_service::analyze;
 
 pub fn create_routes() -> Router {
     Router::new()
-        .route("/analyze", post(analyze))
+        .route("/analyze_api", post(analyze))
 }

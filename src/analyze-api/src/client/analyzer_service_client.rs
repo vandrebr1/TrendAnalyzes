@@ -10,7 +10,7 @@ pub async fn call_analyzer(
     let client = Client::new();
 
     client
-        .post("http://localhost:6000/analyze")
+        .post("http://localhost:6000/analyze_service")
         .json(&request)
         .send()
         .await

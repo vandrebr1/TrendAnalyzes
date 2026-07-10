@@ -3,10 +3,10 @@ use axum::{
     routing::{post, get},
 };
 
-use crate::handlers::{analyzer::analyze_proxy, trend::trend_proxy};
+use crate::handlers::{analyzer_api::analyze_proxy, trend::trend_proxy};
 
 pub fn create_routes() -> Router {
     Router::new()
-        .route("/analyze", post(analyze_proxy))
-        .route("/trends", get(trend_proxy))
+    .route("/analyze_api", post(analyze_proxy))
+    .route("/trends", get(trend_proxy))
 }

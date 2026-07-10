@@ -1,6 +1,6 @@
 use crate::model::*;
 
-pub async fn analyze(_req: AnalyzeRequest) -> AnalyzeResponse {
+pub async fn analyze_request(_req: AnalyzeRequest) -> AnalyzeResponse {
 
     // depois substitui pela chamada real
     /*

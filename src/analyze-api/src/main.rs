@@ -1,5 +1,7 @@
 mod routes;
-mod controller;
+mod handlers {
+    pub mod analyzer_service;
+}
 mod service;
 mod model;
 mod client {
@@ -16,7 +18,7 @@ use model::{AnalyzeRequest, AnalyzeResponse};
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(controller::analyze),
+    paths(handlers::analyzer_service::analyze),
     components(
         schemas(AnalyzeRequest, AnalyzeResponse)
     )
