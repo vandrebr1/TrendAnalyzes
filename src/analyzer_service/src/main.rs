@@ -1,20 +1,16 @@
-mod routes;
-mod handlers {
-    pub mod analyzer_service;
-}
-mod service;
-mod model;
-mod client {
-    pub mod analyzer_service_client;
-}
-
 use axum::serve;
+mod routes;
+mod model;
 use tokio::net::TcpListener;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use routes::create_routes;
 use model::{AnalyzeRequest, AnalyzeResponse};
+
+mod handlers {
+    pub mod analyzer_service;
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -34,7 +30,7 @@ async fn main() -> std::io::Result<()> {
                 .url("/api-doc/openapi.json", ApiDoc::openapi()),
         );
 
-    let listener = TcpListener::bind("0.0.0.0:4000").await?;
+    let listener = TcpListener::bind("0.0.0.0:3050").await?;
 
     serve(listener, app).await
 }

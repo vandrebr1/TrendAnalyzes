@@ -1,6 +1,6 @@
 use axum::{Json, http::StatusCode};
 
-use crate::clients::analyze_api_client::call_analyze_api;
+use crate::clients::analyze_service_client::call_analyze_api;
 use crate::handlers::error::ApiError;
 
 pub use crate::model::{AnalyzeRequest, AnalyzeResponse};
@@ -8,7 +8,7 @@ pub use crate::model::{AnalyzeRequest, AnalyzeResponse};
 
 #[utoipa::path(
     post,
-    path = "/analyze_api",
+    path = "/analyzer_service",
     request_body = AnalyzeRequest,
     responses(
         (status = 200, description = "Analyze result", body = AnalyzeResponse),

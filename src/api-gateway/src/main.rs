@@ -7,7 +7,7 @@ mod handlers {
     pub mod trend;
 }
 mod clients {
-    pub mod analyze_api_client;
+    pub mod analyze_service_client;
     pub mod trend_client;
 }
 
