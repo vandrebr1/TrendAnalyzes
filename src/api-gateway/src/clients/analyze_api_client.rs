@@ -1,6 +1,6 @@
 use reqwest::Client;
 
-use crate::handlers::analyzer::{AnalyzeRequest, AnalyzeResponse};
+use crate::handlers::analyzer_api::{AnalyzeRequest, AnalyzeResponse};
 
 pub async fn call_analyze_api(
     request: AnalyzeRequest
@@ -9,7 +9,7 @@ pub async fn call_analyze_api(
     let client = Client::new();
 
     client
-        .post("http://localhost:4000/analyze")
+        .post("http://localhost:4000/analyze_api")
         .json(&request)
         .send()
         .await?

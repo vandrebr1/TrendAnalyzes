@@ -1,12 +1,13 @@
 
 mod routes;
+mod model;
 mod handlers {
-    pub mod analyzer;
+    pub mod analyzer_api;
     pub mod error;
     pub mod trend;
 }
 mod clients {
-    pub mod analyze_client;
+    pub mod analyze_api_client;
     pub mod trend_client;
 }
 
@@ -17,14 +18,14 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use routes::create_routes;
 
-use handlers::analyzer::{AnalyzeRequest, AnalyzeResponse};
+use handlers::analyzer_api::{AnalyzeRequest, AnalyzeResponse};
 use handlers::error::ApiError;
 use handlers::trend::TrendResponse;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        handlers::analyzer::analyze_proxy,
+        handlers::analyzer_api::analyze_proxy,
         handlers::trend::trend_proxy
     ),
     components(
