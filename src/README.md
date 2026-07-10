@@ -3,7 +3,7 @@
 Run the two backend services locally:
 
 - `api-gateway`
-- `analyze-api`
+- `analyzer_service`
 
 ## Prerequisites
 
@@ -20,10 +20,10 @@ cargo build
 cargo run
 ```
 
-### 2. Start `analyze-api` (in another terminal)
+### 2. Start `analyzer-service` (in another terminal)
 
 ```powershell
-cd C:\..\TrendAnalyzes\src\analyze-api
+cd C:\..\TrendAnalyzes\src\analyzer-service
 cargo build
 cargo run
 ```
@@ -33,5 +33,6 @@ cargo run
 After both services are running, open:
 
 - http://localhost:3000/swagger
+- http://localhost:3050/swagger
 
 

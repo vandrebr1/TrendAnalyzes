@@ -4,5 +4,5 @@ use crate::handlers::analyzer_service::analyze;
 
 pub fn create_routes() -> Router {
     Router::new()
-        .route("/analyze_api", post(analyze))
+        .route("/analyzer_service", post(analyze))
 }

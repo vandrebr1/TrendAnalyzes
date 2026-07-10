@@ -7,7 +7,7 @@ pub async fn call_trend_api() -> Result<Vec<TrendResponse>, reqwest::Error> {
     let client = Client::new();
 
     client
-        .get("http://localhost:5000/trends")
+        .get("http://localhost:4000/trends")
         .send()
         .await?
         .error_for_status()?

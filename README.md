@@ -42,13 +42,6 @@ explainable, and maintainable**.
 - A C toolchain (provided automatically on Windows via the MSVC build tools;
   required by the bundled SQLite build)
 
-## Project Status
-
-🚧 **Early scaffolding.** This is the initial "hello world" skeleton: an Axum
-server with a root endpoint and a `/health` check. The ingestion, processing,
-and analysis pipeline described in [ARCHITECTURE.md](ARCHITECTURE.md) is not yet
-implemented.
-
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design, modules, and data flow.
