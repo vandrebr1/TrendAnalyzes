@@ -10,3 +10,13 @@ pub struct AnalyzeRequest {
 pub struct AnalyzeResponse {
     pub trend_score: f64,
 }
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct AiChatRequest {
+    pub keywords: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct AiChatResponse {
+    pub response: String,
+}
