@@ -14,9 +14,11 @@ mod clients {
 }
 
 use axum::serve;
+use axum::http::Method;
 use dotenvy::dotenv;
 use std::env;
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -53,11 +55,17 @@ async fn main() -> std::io::Result<()> {
 
     let bind_addr = env::var("API_GATEWAY_BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_owned());
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers(Any);
+
     let app = create_routes()
         .merge(
             SwaggerUi::new("/swagger")
                 .url("/api-doc/openapi.json", ApiDoc::openapi()),
-        );
+        )
+        .layer(cors);
 
     let listener = TcpListener::bind(&bind_addr).await?;
 

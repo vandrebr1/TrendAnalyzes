@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Summary</title>
+  <style>
+    :root {
+      --bg: #f8f8f6;
+      --card: #ffffff;
+      --text: #1d1f21;
+      --muted: #5f6368;
+      --border: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    #payload-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      padding: 10px;
+      font: inherit;
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .hint {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+    }
+
+    .actions {
+      margin-top: 10px;
+    }
+
+    #send-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .result-block {
+      margin-top: 10px;
+    }
+
+    .result-block h3 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+    }
+
+    .result-block p {
+      margin: 0;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h2>Input</h2>
+      <textarea id="payload-input" spellcheck="false">{
+  "keywords": [
+    "string"
+  ]
+}</textarea>
+      <p class="hint">Send this JSON format.</p>
+      <div class="actions">
+        <button id="send-btn" type="button">Send</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Result</h2>
+      <div class="result-block">
+        <h3>Main Topics</h3>
+        <p id="main-topics" class="muted"></p>
+      </div>
+      <div class="result-block">
+        <h3>Recurring Themes</h3>
+        <p id="recurring-themes" class="muted"></p>
+      </div>
+      <div class="result-block">
+        <h3>Dominant Narrative</h3>
+        <p id="dominant-narrative" class="muted"></p>
+      </div>
+      <div class="result-block">
+        <h3>Articles Analyzed</h3>
+        <p id="articles-analyzed" class="muted"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const API_ENDPOINT = "http://localhost:3000/ai/chat";
+
+      const payloadInput = document.getElementById("payload-input");
+      const sendBtn = document.getElementById("send-btn");
+
+      const mainTopicsEl = document.getElementById("main-topics");
+      const recurringThemesEl = document.getElementById("recurring-themes");
+      const dominantNarrativeEl = document.getElementById("dominant-narrative");
+      const articlesAnalyzedEl = document.getElementById("articles-analyzed");
+
+      function extractSection(text, label, nextLabels) {
+        const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const nextEscaped = nextLabels
+          .map(function (nextLabel) {
+            return nextLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          })
+          .join("|");
+
+        const pattern = nextEscaped
+          ? new RegExp(escaped + ":\\n([\\s\\S]*?)(?=\\n\\n(?:" + nextEscaped + "):\\n|$)")
+          : new RegExp(escaped + ":\\n([\\s\\S]*?)$");
+
+        const match = text.match(pattern);
+        return match ? match[1].trim() : "";
+      }
+
+      async function sendKeywords() {
+        mainTopicsEl.textContent = "";
+        recurringThemesEl.textContent = "";
+        dominantNarrativeEl.textContent = "";
+        articlesAnalyzedEl.textContent = "";
+
+        try {
+          const payload = JSON.parse(payloadInput.value);
+          const response = await fetch(API_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json();
+          const responseText = typeof data.response === "string" ? data.response : "";
+
+          mainTopicsEl.textContent = extractSection(responseText, "Main topics", ["Recurring themes", "Dominant narrative", "Articles analyzed"]);
+          recurringThemesEl.textContent = extractSection(responseText, "Recurring themes", ["Dominant narrative", "Articles analyzed"]);
+          dominantNarrativeEl.textContent = extractSection(responseText, "Dominant narrative", ["Articles analyzed"]);
+          articlesAnalyzedEl.textContent = extractSection(responseText, "Articles analyzed", []);
+        } catch {
+          mainTopicsEl.textContent = "";
+          recurringThemesEl.textContent = "";
+          dominantNarrativeEl.textContent = "";
+          articlesAnalyzedEl.textContent = "";
+        }
+      }
+
+      sendBtn.addEventListener("click", sendKeywords);
+    })();
+  </script>
+</body>
+</html>
