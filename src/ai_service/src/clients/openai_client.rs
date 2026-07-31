@@ -21,6 +21,9 @@ Main topics:
 Recurring themes:
 - ...
 
+Dominant narrative:
+- ...
+
 Articles analyzed: <count>
 
 Rules:
@@ -49,7 +52,7 @@ const SEARCH_NEWS_TOOL_SCHEMA: &str = r#"
                 "limit": {
                     "type": "integer",
                     "description": "Maximum number of articles",
-                    "default": 10
+                    "default": 15
                 }
             },
             "required": ["keyword"]
