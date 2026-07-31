@@ -1,0 +1,10 @@
+# TrendAnalyzes/Cargo.toml
+
+[workspace]
+resolver = "2"
+
+members = [
+    "src/api-gateway",
+    "src/analyzer_service",
+    "src/ai_service"
+]
