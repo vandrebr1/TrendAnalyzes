@@ -1,6 +1,13 @@
 use std::env;
 
-use crate::{handlers::error::AppError, model::ServiceConfig};
+use crate::handlers::error::AppError;
+
+#[derive(Debug)]
+pub struct ServiceConfig {
+    pub capgen_api_key: String,
+    pub capgen_base_url: String,
+    pub capgen_model: String,
+}
 
 impl ServiceConfig {
     pub fn from_env() -> Result<Self, AppError> {

@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+use crate::ports::AiChatService;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct AiChatRequest {
@@ -14,23 +15,9 @@ pub struct AiChatResponse {
     pub response: String,
 }
 
-pub struct OpenAiClient {
-    pub(crate) http_client: Client,
-    pub(crate) base_url: String,
-    pub(crate) api_key: String,
-    pub(crate) model: String,
-}
-
-#[derive(Debug)]
-pub struct ServiceConfig {
-    pub capgen_api_key: String,
-    pub capgen_base_url: String,
-    pub capgen_model: String,
-}
-
 #[derive(Clone)]
 pub struct AppState {
-    pub openai_client: Arc<OpenAiClient>,
+    pub ai_chat_service: Arc<dyn AiChatService>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

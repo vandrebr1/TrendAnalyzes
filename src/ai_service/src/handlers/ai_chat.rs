@@ -33,7 +33,7 @@ pub async fn ai_chat(
     }
 
     let message = keywords.join(", ");
-    let response = state.openai_client.run_agent(&message).await?;
+    let response = state.ai_chat_service.analyze(&message).await?;
 
     Ok(Json(AiChatResponse { response }))
 }

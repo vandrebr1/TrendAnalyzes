@@ -5,7 +5,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod clients {
-    pub mod openai_client;
+    pub mod ai_client;
     pub mod search_news;
 }
 mod config;
@@ -14,10 +14,13 @@ mod handlers {
     pub mod error;
 }
 mod model;
+mod ports;
 mod routes;
 
 use dotenvy::dotenv;
-use model::{AiChatRequest, AiChatResponse, ApiError, AppState, OpenAiClient, ServiceConfig};
+use clients::{ai_client::AiClient, search_news::SearchNewsClient};
+use config::ServiceConfig;
+use model::{AiChatRequest, AiChatResponse, ApiError, AppState};
 use routes::create_routes;
 
 #[derive(OpenApi)]
@@ -37,14 +40,15 @@ async fn main() -> std::io::Result<()> {
 
     let config = ServiceConfig::from_env().map_err(std::io::Error::other)?;
 
-    let openai_client = OpenAiClient::new(
+    let ai_chat_service = AiClient::new(
         config.capgen_base_url.clone(),
         config.capgen_api_key.clone(),
         config.capgen_model.clone(),
+        Arc::new(SearchNewsClient::new()),
     );
 
     let app_state = AppState {
-        openai_client: Arc::new(openai_client),
+        ai_chat_service: Arc::new(ai_chat_service),
     };
 
     let app = create_routes(app_state).merge(

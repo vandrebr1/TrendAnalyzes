@@ -18,3 +18,4 @@ utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 thiserror = "2"
 dotenvy = "0.15"
+async-trait = "0.1"

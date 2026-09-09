@@ -1,15 +1,31 @@
-use serde_json::Value;
+use async_trait::async_trait;
+use reqwest::Client;
+
 use crate::handlers::error::AppError;
 use crate::model::NewsArticle;
+use crate::ports::NewsSearcher;
 
-pub async fn search_news(keyword: &str, limit: u64) -> Result<String, AppError> {
+pub struct SearchNewsClient {
+    http_client: Client,
+}
+
+impl SearchNewsClient {
+    pub fn new() -> Self {
+        Self {
+            http_client: Client::new(),
+        }
+    }
+
+    async fn search_news(&self, keyword: &str, limit: u64) -> Result<String, AppError> {
         let url = format!(
             "https://news.google.com/rss/search?q={}",
             urlencoding::encode(keyword)
         );
 
-        let rss = reqwest::get(url)
+        let rss = self.http_client.get(url)
+            .send()
             .await?
+            .error_for_status()?
             .text()
             .await?;
 
@@ -54,38 +70,14 @@ pub async fn search_news(keyword: &str, limit: u64) -> Result<String, AppError> 
         serde_json::to_string(&articles)
             .map_err(|err| AppError::InvalidUpstream(format!("failed to serialize articles: {err}")))
     }
+}
 
-pub fn extract_tool_search_news_args(message: &Value) -> Result<Option<(String, u64)>, AppError> {
-        let Some(tool_call) = message["tool_calls"]
-            .as_array()
-            .and_then(|calls| calls.first())
-        else {
-            return Ok(None);
-        };
-
-        let args_str = tool_call["function"]["arguments"]
-            .as_str()
-            .ok_or_else(|| {
-                AppError::InvalidUpstream("missing arguments".to_owned())
-            })?;
-
-        let args: Value = serde_json::from_str(args_str)
-            .map_err(|err| {
-                AppError::InvalidUpstream(format!("failed to parse tool arguments: {err}"))
-            })?;
-
-        let keyword = args["keyword"]
-            .as_str()
-            .ok_or_else(|| {
-                AppError::InvalidUpstream("missing keyword".to_owned())
-            })?;
-
-        let limit = args["limit"]
-            .as_u64()
-            .unwrap_or(10);
-
-        Ok(Some((keyword.to_owned(), limit)))
+#[async_trait]
+impl NewsSearcher for SearchNewsClient {
+    async fn search(&self, keyword: &str, limit: u64) -> Result<String, AppError> {
+        self.search_news(keyword, limit).await
     }
+}
 
 fn extract_between_tags(text: &str, start_tag: &str, end_tag: &str) -> Option<String> {
         let start_idx = text.find(start_tag)?;
