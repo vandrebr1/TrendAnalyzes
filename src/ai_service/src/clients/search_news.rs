@@ -85,6 +85,4 @@ fn extract_between_tags(text: &str, start_tag: &str, end_tag: &str) -> Option<St
         let end_rel = text[from..].find(end_tag)?;
         let to = from + end_rel;
         Some(text[from..to].trim().to_owned())
-    }
-
-
+}
