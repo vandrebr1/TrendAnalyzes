@@ -9,8 +9,6 @@ mod handlers {
 }
 mod clients {
     pub mod ai_service_client;
-    pub mod analyze_service_client;
-    pub mod trend_client;
 }
 
 use axum::serve;
