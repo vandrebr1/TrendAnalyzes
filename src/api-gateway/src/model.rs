@@ -14,6 +14,14 @@ pub struct AnalyzeResponse {
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct AiChatRequest {
     pub keywords: Vec<String>,
+    pub source: Option<SearchSource>,
+}
+
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum SearchSource {
+    News,
+    Reddit,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]

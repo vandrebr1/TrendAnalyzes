@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{
     handlers::error::AppError,
-    ports::{AiChatService, NewsSearcher},
+    model::SearchSource,
+    ports::{AiChatService, NewsSearcher, RedditSearcher},
 };
 
 pub struct AiClient {
@@ -15,12 +16,43 @@ pub struct AiClient {
     api_key: String,
     model: String,
     news_searcher: Arc<dyn NewsSearcher>,
+    reddit_searcher: Option<Arc<dyn RedditSearcher>>,
 }
 
-const SYSTEM_PROMPT: &str = r#"
+const BATCH_ANALYSIS_PROMPT: &str = r#"
+Analyze the provided news articles.
+
+Use only the provided information.
+
+Return:
+
+Topics:
+
+- ...
+
+Themes:
+
+- ...
+
+Narrative:
+...
+
+Rules:
+
+- Merge articles about the same subject.
+- Do not list or quote article titles.
+- Do not invent information.
+- Keep the response under 80 words.
+  "#;
+
+const FINAL_ANALYSIS_PROMPT: &str = r#"
 You are a trend analysis backend service.
 
-Use only tool results.
+You will receive two short analyses from separate news searches.
+
+Combine them and identify the strongest recurring trends.
+Give more importance to topics found in both analyses.
+Merge equivalent topics and themes.
 
 Return exactly:
 
@@ -36,38 +68,11 @@ Dominant narrative:
 Articles analyzed: <count>
 
 Rules:
-
+- Use only the provided analyses.
+- Do not invent information.
 - Do not list articles.
-- Do not quote article titles.
-- Do not explain individual articles.
-- Do not generate reports.
-- Do not generate summaries longer than 10 lines.
-- Use only information present in tool results.
 - Keep the response under 100 words.
 "#;
-
-const SEARCH_NEWS_TOOL_SCHEMA: &str = r#"
-{
-    "type": "function",
-    "function": {
-        "name": "search_news",
-        "description": "Search news articles",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "keyword": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "description": "Maximum number of articles",
-                    "default": 15
-                }
-            },
-            "required": ["keyword"]
-        }
-    }
-}"#;
 
 impl AiClient {
     pub fn new(
@@ -75,6 +80,7 @@ impl AiClient {
         api_key: String,
         model: String,
         news_searcher: Arc<dyn NewsSearcher>,
+        reddit_searcher: Option<Arc<dyn RedditSearcher>>,
     ) -> Self {
         Self {
             http_client: Client::new(),
@@ -82,34 +88,75 @@ impl AiClient {
             api_key,
             model,
             news_searcher,
+            reddit_searcher,
         }
     }
 
-    async fn request_analysis(&self, prompt: &str) -> Result<String, AppError> {
+    async fn request_analysis(
+        &self,
+        prompt: &str,
+        source: SearchSource,
+    ) -> Result<String, AppError> {
+        let query = build_search_query(prompt);
+        let articles = match source {
+            SearchSource::News => self.news_searcher.search(&query, 20).await?,
+            SearchSource::Reddit => {
+                self.reddit_searcher
+                    .as_ref()
+                    .ok_or_else(|| AppError::missing_config("REDDIT_CLIENT_ID"))?
+                    .search(&query, 20)
+                    .await?
+            }
+        };
+        let (first_batch, second_batch) = split_article_batches(&articles)?;
+
+        let (first_analysis, second_analysis) = tokio::try_join!(
+            self.analyze_batch(&first_batch),
+            self.analyze_batch(&second_batch),
+        )?;
+
+        self.analyze_final(&first_analysis, &second_analysis).await
+    }
+
+    async fn analyze_batch(&self, articles: &str) -> Result<String, AppError> {
+        self.request_completion(BATCH_ANALYSIS_PROMPT, articles)
+            .await
+    }
+
+    async fn analyze_final(
+        &self,
+        first_analysis: &str,
+        second_analysis: &str,
+    ) -> Result<String, AppError> {
+        let analyses = format!(
+            "First news-search analysis:\n{first_analysis}\n\nSecond news-search analysis:\n{second_analysis}"
+        );
+
+        self.request_completion(FINAL_ANALYSIS_PROMPT, &analyses)
+            .await
+    }
+
+    async fn request_completion(
+        &self,
+        system_prompt: &str,
+        user_content: &str,
+    ) -> Result<String, AppError> {
         let payload = json!({
             "model": self.model,
             "messages": [
                 {
                     "role": "system",
-                    "content": SYSTEM_PROMPT
+                    "content": system_prompt
                 },
                 {
                     "role": "user",
-                    "content": prompt
+                    "content": user_content
                 }
-            ],
-            "tools": [
-                serde_json::from_str::<Value>(SEARCH_NEWS_TOOL_SCHEMA).map_err(|error| {
-                    AppError::InvalidUpstream(format!("invalid search tool schema: {error}"))
-                })?
             ]
         });
 
         let response = self.send_completion(&payload).await?;
-        let initial_response = response["choices"][0]["message"].clone();
-        let final_response = self.tool_response(initial_response, prompt).await?;
-
-        final_response
+        response
             .get("choices")
             .and_then(|choices| choices.get(0))
             .and_then(|choice| choice.get("message"))
@@ -119,42 +166,6 @@ impl AiClient {
             .ok_or_else(|| {
                 AppError::InvalidUpstream("missing choices[0].message.content".to_owned())
             })
-    }
-
-    async fn tool_response(&self, message: Value, prompt: &str) -> Result<Value, AppError> {
-        let (keyword, limit) = extract_tool_search_news_args(&message)?.ok_or_else(|| {
-            AppError::InvalidUpstream("missing tool_calls[0]".to_owned())
-        })?;
-        let news = self.news_searcher.search(&keyword, limit).await?;
-        let tool_call_id = message["tool_calls"]
-            .as_array()
-            .and_then(|calls| calls.first())
-            .and_then(|tool_call| tool_call["id"].as_str())
-            .ok_or_else(|| {
-                AppError::InvalidUpstream("missing tool_calls[0].id".to_owned())
-            })?;
-
-        let payload = json!({
-            "model": self.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                },
-                message,
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": news
-                }
-            ],
-        });
-
-        self.send_completion(&payload).await
     }
 
     async fn send_completion(&self, payload: &Value) -> Result<Value, AppError> {
@@ -176,29 +187,34 @@ impl AiClient {
 
 #[async_trait]
 impl AiChatService for AiClient {
-    async fn analyze(&self, prompt: &str) -> Result<String, AppError> {
-        self.request_analysis(prompt).await
+    async fn analyze(&self, prompt: &str, source: SearchSource) -> Result<String, AppError> {
+        self.request_analysis(prompt, source).await
     }
 }
 
-fn extract_tool_search_news_args(message: &Value) -> Result<Option<(String, u64)>, AppError> {
-    let Some(tool_call) = message["tool_calls"]
-        .as_array()
-        .and_then(|calls| calls.first())
-    else {
-        return Ok(None);
-    };
+fn build_search_query(keywords: &str) -> String {
+    keywords
+        .split(',')
+        .map(str::trim)
+        .filter(|keyword| !keyword.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
 
-    let args_str = tool_call["function"]["arguments"]
-        .as_str()
-        .ok_or_else(|| AppError::InvalidUpstream("missing arguments".to_owned()))?;
-    let args: Value = serde_json::from_str(args_str).map_err(|error| {
-        AppError::InvalidUpstream(format!("failed to parse tool arguments: {error}"))
+fn split_article_batches(articles: &str) -> Result<(String, String), AppError> {
+    let articles: Vec<Value> = serde_json::from_str(articles).map_err(|error| {
+        AppError::InvalidUpstream(format!("failed to parse news articles: {error}"))
     })?;
-    let keyword = args["keyword"]
-        .as_str()
-        .ok_or_else(|| AppError::InvalidUpstream("missing keyword".to_owned()))?;
-    let limit = args["limit"].as_u64().unwrap_or(10);
+    let articles: Vec<Value> = articles.into_iter().take(20).collect();
+    let first_batch_len = articles.len().div_ceil(2);
+    let (first_batch, second_batch) = articles.split_at(first_batch_len);
 
-    Ok(Some((keyword.to_owned(), limit)))
+    Ok((
+        serde_json::to_string(first_batch).map_err(|error| {
+            AppError::InvalidUpstream(format!("failed to serialize first article batch: {error}"))
+        })?,
+        serde_json::to_string(second_batch).map_err(|error| {
+            AppError::InvalidUpstream(format!("failed to serialize second article batch: {error}"))
+        })?,
+    ))
 }

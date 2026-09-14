@@ -6,19 +6,21 @@ use utoipa_swagger_ui::SwaggerUi;
 
 mod clients {
     pub mod ai_client;
+    pub mod reddit_search;
     pub mod search_news;
 }
 mod config;
 mod handlers {
     pub mod ai_chat;
     pub mod error;
+    pub mod internal_auth;
 }
 mod model;
 mod ports;
 mod routes;
 
 use dotenvy::dotenv;
-use clients::{ai_client::AiClient, search_news::SearchNewsClient};
+use clients::{ai_client::AiClient, reddit_search::RedditSearchClient, search_news::SearchNewsClient};
 use config::ServiceConfig;
 use model::{AiChatRequest, AiChatResponse, ApiError, AppState};
 use routes::create_routes;
@@ -45,10 +47,12 @@ async fn main() -> std::io::Result<()> {
         config.capgen_api_key.clone(),
         config.capgen_model.clone(),
         Arc::new(SearchNewsClient::new()),
+        config.reddit.map(|reddit| Arc::new(RedditSearchClient::new(reddit))),
     );
 
     let app_state = AppState {
         ai_chat_service: Arc::new(ai_chat_service),
+        ai_service_token: Arc::from(config.ai_service_token),
     };
 
     let app = create_routes(app_state).merge(
