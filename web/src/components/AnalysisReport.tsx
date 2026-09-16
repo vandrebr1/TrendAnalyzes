@@ -16,12 +16,32 @@ export function AnalysisReport({ analysis, raw, status }: AnalysisReportProps) {
   const reading = status === "loading";
   const filled = analysis !== null && !reading;
 
+  // append_article_count checks only that the three heading lines exist, not
+  // that anything sits under them, so a response with bare headings passes the
+  // backend's own 502 check and arrives here empty. Without this floor the page
+  // would show an article count and no answer, which reads exactly like a run
+  // that never happened.
+  const barren =
+    filled &&
+    analysis.mainTopics.length === 0 &&
+    analysis.recurringThemes.length === 0 &&
+    analysis.dominantNarrative.length === 0;
+
   return (
     <section className="reading" aria-busy={reading}>
       <Tally
         state={reading ? "reading" : filled ? "done" : "idle"}
         read={filled ? analysis.articlesAnalyzed : null}
       />
+
+      {barren && (
+        <div className="alert" role="alert">
+          <p>
+            The articles were found, but the reading came back with its three headings and nothing
+            under them. Try running it again.
+          </p>
+        </div>
+      )}
 
       {filled && analysis.mainTopics.length > 0 && (
         <div className="zone">

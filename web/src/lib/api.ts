@@ -45,6 +45,11 @@ async function readGatewayMessage(response: Response): Promise<string | null> {
 }
 
 function explain(status: number, detail: string | null): AnalysisError {
+  // Unreachable through the current gateway: ai_chat_proxy maps every error
+  // from call_ai_service to 502, including ai_service's own 400. Kept because
+  // it costs nothing and is correct the day the gateway starts passing the
+  // upstream status through — but do not read its presence as evidence that a
+  // 400 can arrive today.
   if (status === 400) {
     return new AnalysisError("Name at least one subject to read about.", detail);
   }
