@@ -1,35 +1,48 @@
 /*
- * Trend Analyzes — landing.
+ * Trend Analyzes.
  *
- * One structural idea: the page narrows as the analysis narrows. Every block
- * starts on the same left rail and ends earlier than the block above it, so
- * "many sources, one story" is visible in the shape of the page itself.
- * Boldness is spent in one place: the display serif, used only for the hero
- * and for the dominant narrative — the question and its answer.
+ * The page is a readout, not a document. Its one device is the tally under the
+ * question: twenty ticks in two groups, because the service asks Google News
+ * for at most twenty articles and reads the two halves at once. A tick only
+ * lights for an article that actually came back, so the page never promises
+ * twenty — it reports what it got, and the number beside it is the count the
+ * backend appended.
+ *
+ * Colour carries one distinction and nothing else. Amber is material: the
+ * articles and their count. Ice blue is the answer: the control that asks for
+ * one, and the narrative that comes back. Everything else is text on ground.
+ *
+ * Structure: a label column on the left, content on the right, used the same
+ * way for the result and for the explanation. The dominant narrative is the
+ * only block that breaks that grid — full width, raised, set large. There is
+ * one raised surface in the reading and one motion moment, and both are spent
+ * on it.
  */
 
 :root {
-  --ground: #e6e9e3;
-  --surface: #fbfbf9;
-  --ink: #161c1a;
-  --muted: #59665f;
-  --line: #c6cdc2;
-  --accent: #1b3fa8;
-  --signal: #b8862b;
+  --ground: #0f1520;
+  --raised: #171f2d;
+  --idle-mark: #35435a;
+  --dim: #8494a8;
+  --text: #e6ebf2;
+  --flare: #ffb25c;
+  --cool: #8fd4e8;
 
-  /* 1.333 modular scale */
-  --step--1: 0.844rem;
-  --step-0: 1rem;
-  --step-1: 1.333rem;
-  --step-2: 1.777rem;
-  --step-3: 2.369rem;
-  --step-4: 3.157rem;
+  /* 1.25 scale, with two display steps that break it deliberately. */
+  --t-xs: 0.8125rem;
+  --t-sm: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.375rem;
+  --t-ask: clamp(2.125rem, 6.5vw, 3.5rem);
+  --t-answer: clamp(1.5rem, 3.4vw, 2.125rem);
 
-  --rail: clamp(1.25rem, 6vw, 5.5rem);
-  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
-  --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --rail: clamp(1.25rem, 5.5vw, 6rem);
+  --gutter: 13rem;
 
-  color-scheme: light;
+  --display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color-scheme: dark;
 }
 
 *,
@@ -41,370 +54,420 @@
 body {
   margin: 0;
   background: var(--ground);
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: var(--step-0);
-  line-height: 1.55;
+  color: var(--text);
+  font-family: var(--body);
+  font-size: var(--t-md);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--cool);
+  outline-offset: 4px;
 }
 
-/* ---------------------------------------------------------------- masthead */
+/* ------------------------------------------------------------------ chrome */
 
-.masthead {
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+.skip:focus {
+  left: var(--rail);
+  top: 0.75rem;
+  z-index: 2;
+  padding: 0.5rem 0.875rem;
+  background: var(--cool);
+  color: var(--ground);
+  text-decoration: none;
+}
+
+.bar {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
   padding: 1.5rem var(--rail);
-  border-bottom: 1px solid var(--line);
 }
 
-.masthead__name {
-  font-family: var(--serif);
-  font-size: var(--step-1);
-  letter-spacing: -0.01em;
+.bar__name {
+  font-family: var(--display);
+  font-size: var(--t-md);
+  font-variation-settings: "wdth" 88, "wght" 600;
+  letter-spacing: 0.01em;
 }
 
-.masthead__link {
-  color: var(--muted);
-  font-size: var(--step--1);
-  text-decoration: none;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 1px;
+.bar__link {
+  color: var(--dim);
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  text-decoration-color: var(--idle-mark);
+  text-underline-offset: 0.25em;
 }
 
-.masthead__link:hover {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
+.bar__link:hover {
+  color: var(--text);
+  text-decoration-color: var(--cool);
 }
 
-/* -------------------------------------------------------------------- hero */
-
-.hero {
-  padding: clamp(3rem, 9vw, 6rem) var(--rail) 0;
+.page {
+  padding-inline: var(--rail);
+  padding-bottom: clamp(4rem, 10vw, 7rem);
 }
 
-.hero__title {
+/* -------------------------------------------------------------- the question
+ *
+ * The heading is the label. There is no separate headline above the field,
+ * because the sentence the field completes is the most direct statement of
+ * what the page does.
+ */
+
+.ask {
+  padding-top: clamp(2.5rem, 8vw, 5rem);
+  max-width: 44rem;
+}
+
+.ask__title {
   margin: 0;
-  max-width: 15ch;
-  font-family: var(--serif);
-  font-size: clamp(var(--step-3), 7.5vw, var(--step-4));
+  font-family: var(--display);
+  font-size: var(--t-lg);
+  font-variation-settings: "wdth" 92, "wght" 400;
   font-weight: 400;
-  line-height: 0.97;
-  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--dim);
 }
 
-.hero__lede {
-  margin: 1.5rem 0 0;
-  max-width: 46ch;
-  color: var(--muted);
-  font-size: var(--step-1);
-  line-height: 1.45;
-}
-
-/* ------------------------------------------------------------------- query */
-
-.query {
-  padding: clamp(2.5rem, 6vw, 3.5rem) var(--rail) 0;
-  max-width: calc(46ch + var(--rail) * 2);
-}
-
-.query__label {
-  display: block;
-  color: var(--muted);
-  font-size: var(--step--1);
-  margin-bottom: 0.5rem;
-}
-
-.query__row {
+.ask__row {
   display: flex;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  margin-top: 0.5rem;
+  border-bottom: 2px solid var(--cool);
 }
 
-.query__input {
+.ask__field {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 0.75rem 0.875rem;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
+  padding: 0 0 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--display);
+  font-size: var(--t-ask);
+  font-variation-settings: "wdth" 86, "wght" 500;
+  line-height: 1.1;
 }
 
-.query__input::placeholder {
-  color: color-mix(in srgb, var(--muted) 60%, transparent);
+.ask__field::placeholder {
+  color: var(--dim);
+  font-variation-settings: "wdth" 86, "wght" 400;
 }
 
-.query__input:focus-visible {
-  border-color: var(--accent);
+.ask__field:focus {
+  outline: none;
 }
 
-.query__submit {
+.ask__field:focus-visible {
+  outline: 2px solid var(--cool);
+  outline-offset: 6px;
+}
+
+.ask__submit {
   flex: 0 0 auto;
-  padding: 0.75rem 1.5rem;
-  border: 1px solid var(--accent);
+  margin-bottom: 0.625rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
   border-radius: 2px;
-  background: var(--accent);
-  color: var(--surface);
-  font: inherit;
-  font-weight: 500;
+  background: var(--cool);
+  color: var(--ground);
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  font-weight: 600;
   cursor: pointer;
 }
 
-.query__submit:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 85%, black);
+.ask__submit:hover:not(:disabled) {
+  background: var(--text);
 }
 
-.query__submit:disabled {
-  background: var(--muted);
-  border-color: var(--muted);
+.ask__submit:disabled {
+  background: var(--idle-mark);
+  color: var(--text);
   cursor: progress;
 }
 
-.query__hint {
-  margin: 0.5rem 0 0;
-  max-width: 52ch;
-  color: var(--muted);
-  font-size: var(--step--1);
-}
-
-.query__note {
+.ask__hint {
   margin: 0.75rem 0 0;
-  max-width: 50ch;
-  color: var(--muted);
-  font-size: var(--step--1);
+  max-width: 52ch;
+  color: var(--dim);
+  font-size: var(--t-sm);
 }
 
-.query__note--error {
-  color: var(--ink);
-  border-left: 2px solid var(--signal);
-  padding-left: 0.75rem;
+/* ------------------------------------------------------------------- alert */
+
+.alert {
+  margin-top: 1.5rem;
+  max-width: 60ch;
+  padding: 0.875rem 1rem;
+  background: var(--raised);
+  border-left: 2px solid var(--flare);
 }
 
-/* ------------------------------------------------------------------ report */
-
-.report {
-  padding: clamp(3rem, 8vw, 5rem) var(--rail) 0;
-}
-
-.report__section + .report__section {
-  margin-top: 2.5rem;
-}
-
-/* The narrowing. Same left edge, an earlier right edge each time. */
-.report__section--wide {
-  max-width: 58ch;
-}
-
-.report__section--medium {
-  max-width: 48ch;
-}
-
-.report__section--narrow {
-  max-width: 38ch;
-}
-
-.report__heading {
-  margin: 0 0 0.75rem;
-  font-size: var(--step-0);
-  font-weight: 600;
-  letter-spacing: 0.005em;
-}
-
-.rule {
-  height: 2px;
-  background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
-  background-size: 6px 2px;
-  background-repeat: repeat-x;
-}
-
-.rule--wide {
-  width: 100%;
-}
-
-.rule--medium {
-  width: 66%;
-}
-
-.rule--narrow {
-  width: 38%;
-}
-
-.report__list {
+.alert p {
   margin: 0;
-  padding: 0;
-  list-style: none;
+  font-size: var(--t-sm);
 }
 
-.report__list li {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--line);
+.alert__detail {
+  margin-top: 0.625rem;
+  font-size: var(--t-xs);
 }
 
-.report__list li:first-child {
-  border-top: 1px solid var(--line);
-}
-
-.report__narrative {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: var(--step-2);
-  line-height: 1.32;
-}
-
-.report__provenance {
-  margin: 2.5rem 0 0;
-  color: var(--signal);
-  font-size: var(--step--1);
-}
-
-/*
- * A technical affordance, not part of the reading. It stays quiet and closed
- * until someone wants to check the result against what the server actually
- * sent. Set in the body face rather than monospace: the payload is prose, and
- * pre-wrap already preserves it exactly.
- */
-.disclosure {
-  margin-top: 2rem;
-  max-width: 58ch;
-}
-
-.disclosure__summary {
-  color: var(--muted);
-  font-size: var(--step--1);
+.alert__detail summary {
+  color: var(--dim);
   cursor: pointer;
 }
 
-.disclosure__summary:hover {
-  color: var(--ink);
+.alert__detail summary:hover {
+  color: var(--text);
 }
 
-.disclosure__raw {
-  margin: 0.75rem 0 0;
-  padding: 0.875rem 1rem;
-  max-height: 24rem;
-  overflow: auto;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--muted);
+.alert__detail pre {
+  margin: 0.5rem 0 0;
+  color: var(--dim);
   font-family: inherit;
-  font-size: var(--step--1);
+  font-size: var(--t-xs);
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-/* The one motion moment: the rules give way to the result. */
-.report__list,
-.report__narrative {
-  animation: unfold 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+/* -------------------------------------------------------------------- tally
+ *
+ * Twenty ticks in two groups: the cap the search asks for, split the way
+ * split_article_batches splits it, with the first pass taking the larger half.
+ * Within a group the ticks are staggered, but the two groups share the same
+ * delays, so they move together — which is what the two passes actually do.
+ */
+
+.tally {
+  display: flex;
+  gap: clamp(1.5rem, 6vw, 3.25rem);
+  margin-top: clamp(2.5rem, 6vw, 3.5rem);
 }
 
-@keyframes unfold {
-  from {
-    opacity: 0;
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-  }
+.tally__group {
+  display: flex;
+  gap: clamp(0.375rem, 1.5vw, 0.75rem);
 }
 
-.report--loading .rule {
-  background-image: radial-gradient(circle, var(--muted) 1px, transparent 1px);
-  animation: breathe 1.6s ease-in-out infinite;
+.tick {
+  width: 0.1875rem;
+  height: 2.75rem;
+  background: var(--idle-mark);
+  transform-origin: bottom;
 }
 
-@keyframes breathe {
+.tick--read {
+  background: var(--flare);
+}
+
+.tally__caption {
+  margin: 1rem 0 0;
+  max-width: 52ch;
+  color: var(--dim);
+  font-size: var(--t-sm);
+}
+
+.tally__count {
+  color: var(--flare);
+  font-variation-settings: "wght" 600;
+}
+
+/* ------------------------------------------------------------------ reading */
+
+/* Every zone carries its own top margin, including the first, so the label
+ * grid keeps the same rhythm whether it follows the tally or another zone. */
+.zone {
+  display: grid;
+  grid-template-columns: minmax(0, var(--gutter)) minmax(0, 1fr);
+  column-gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.zone__label {
+  margin: 0;
+  color: var(--dim);
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 58ch;
+}
+
+.findings li {
+  padding-left: 1rem;
+  border-left: 2px solid var(--idle-mark);
+}
+
+.findings li + li {
+  margin-top: 0.875rem;
+}
+
+/* The one block that breaks the label grid, and the one raised surface in the
+ * reading: full width, its own ground, set in the display face. */
+.answer {
+  margin-top: clamp(3rem, 7vw, 4.5rem);
+  margin-inline: calc(var(--rail) * -1);
+  padding: clamp(2rem, 5vw, 3.25rem) var(--rail);
+  background: var(--raised);
+}
+
+.answer__label {
+  margin: 0 0 1rem;
+  color: var(--cool);
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  font-weight: 400;
+}
+
+.answer__text {
+  margin: 0;
+  max-width: 42ch;
+  font-family: var(--display);
+  font-size: var(--t-answer);
+  font-variation-settings: "wdth" 94, "wght" 400;
+  line-height: 1.3;
+}
+
+/* A technical affordance, not part of the reading: the blob exactly as it
+ * arrived, for checking the parsed sections against their source. Set in the
+ * body face — the payload is prose, and pre-wrap already preserves it. */
+.source {
+  margin-top: 2rem;
+  max-width: 62ch;
+}
+
+.source__summary {
+  color: var(--dim);
+  font-size: var(--t-sm);
+  cursor: pointer;
+}
+
+.source__summary:hover {
+  color: var(--text);
+}
+
+.source__raw {
+  margin: 0.75rem 0 0;
+  padding: 1rem 1.125rem;
+  max-height: 24rem;
+  overflow: auto;
+  background: var(--raised);
+  color: var(--dim);
+  font-family: inherit;
+  font-size: var(--t-sm);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------- how it works */
+
+.how {
+  margin-top: clamp(3.5rem, 8vw, 5.5rem);
+}
+
+.how p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--dim);
+}
+
+/* ------------------------------------------------------------------- motion
+ *
+ * Two states of one device, and nothing else on the page moves on its own.
+ * While the request is out the ticks sweep, because the frontend has no
+ * progress to report and will not pretend otherwise. When the count arrives
+ * they light in order — the single orchestrated moment.
+ */
+
+.tally--reading .tick {
+  animation: sweep 1.5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+@keyframes sweep {
   0%,
   100% {
-    opacity: 0.3;
+    background: var(--idle-mark);
+    transform: scaleY(1);
   }
   50% {
-    opacity: 0.9;
+    background: var(--flare);
+    transform: scaleY(1.25);
   }
 }
 
-/* ------------------------------------------------------------------ method */
-
-.method {
-  display: grid;
-  gap: 2.5rem;
-  padding: clamp(4rem, 10vw, 7rem) var(--rail) 0;
-  max-width: calc(68ch + var(--rail) * 2);
+.tally--done .tick--read {
+  animation: light 380ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 30ms);
 }
 
-.method__heading {
-  margin: 0 0 0.5rem;
-  font-size: var(--step-0);
-  font-weight: 600;
+@keyframes light {
+  from {
+    background: var(--idle-mark);
+    transform: scaleY(0.3);
+  }
+  to {
+    background: var(--flare);
+    transform: scaleY(1);
+  }
 }
 
-.method__block p {
-  margin: 0;
-  max-width: 58ch;
-  color: var(--muted);
-}
+/* -------------------------------------------------------------- adaptations */
 
-/* ---------------------------------------------------------------- colophon */
+@media (max-width: 48rem) {
+  .zone {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.625rem;
+  }
 
-.colophon {
-  margin-top: clamp(4rem, 10vw, 7rem);
-  padding: 1.5rem var(--rail);
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: var(--step--1);
-}
-
-.colophon p {
-  margin: 0;
-}
-
-.colophon a {
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid var(--line);
-}
-
-.colophon a:hover {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
-}
-
-/* ------------------------------------------------------------- adaptations */
-
-@media (max-width: 34rem) {
-  .query__row {
+  /* Stacked, the rule has to move onto the field itself — under the button it
+     would underline the wrong thing. */
+  .ask__row {
     flex-direction: column;
     align-items: stretch;
+    gap: 0;
+    border-bottom: 0;
   }
 
-  .report__section--wide,
-  .report__section--medium,
-  .report__section--narrow {
-    max-width: none;
+  .ask__field {
+    border-bottom: 2px solid var(--cool);
   }
 
-  .rule--medium {
-    width: 72%;
-  }
-
-  .rule--narrow {
-    width: 46%;
+  .ask__submit {
+    align-self: flex-start;
+    margin: 0.75rem 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .report__list,
-  .report__narrative,
-  .report--loading .rule {
+  .tally--reading .tick,
+  .tally--done .tick--read {
     animation: none;
+  }
+
+  .tally--reading .tick {
+    background: color-mix(in srgb, var(--flare) 45%, var(--idle-mark));
   }
 }

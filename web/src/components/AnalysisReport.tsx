@@ -1,4 +1,5 @@
 import type { Analysis } from "../lib/analysis";
+import { Tally } from "./Tally";
 
 interface AnalysisReportProps {
   analysis: Analysis | null;
@@ -7,63 +8,50 @@ interface AnalysisReportProps {
 }
 
 /**
- * The three sections are always on the page. Before a run they are empty rules
- * of decreasing length — the shape of the answer, shown as a promise. That
- * narrowing is the one structural idea the page is built around, so it must be
- * visible on first paint, not only after a result arrives.
+ * Before a run, only the tally is on the page: the question and the instrument
+ * that will answer it. The sections are not drawn as empty scaffolding, so the
+ * arrival of the narrative is the page's one moment rather than a fill-in.
  */
-const SECTIONS = [
-  { key: "topics", label: "Main topics", width: "wide" },
-  { key: "themes", label: "Recurring themes", width: "medium" },
-  { key: "narrative", label: "Dominant narrative", width: "narrow" },
-] as const;
-
-function Rule({ width }: { width: (typeof SECTIONS)[number]["width"] }) {
-  return <div className={`rule rule--${width}`} aria-hidden="true" />;
-}
-
 export function AnalysisReport({ analysis, raw, status }: AnalysisReportProps) {
-  const filled = analysis !== null && status !== "loading";
+  const reading = status === "loading";
+  const filled = analysis !== null && !reading;
 
   return (
-    <section
-      className={`report report--${status}`}
-      aria-live="polite"
-      aria-busy={status === "loading"}
-    >
-      {SECTIONS.map((section) => {
-        const items =
-          section.key === "topics"
-            ? analysis?.mainTopics
-            : section.key === "themes"
-              ? analysis?.recurringThemes
-              : null;
+    <section className="reading" aria-busy={reading}>
+      <Tally
+        state={reading ? "reading" : filled ? "done" : "idle"}
+        read={filled ? analysis.articlesAnalyzed : null}
+      />
 
-        return (
-          <div key={section.key} className={`report__section report__section--${section.width}`}>
-            <h2 className="report__heading">{section.label}</h2>
+      {filled && analysis.mainTopics.length > 0 && (
+        <div className="zone">
+          <h2 className="zone__label">Main topics</h2>
+          <ul className="findings">
+            {analysis.mainTopics.map((topic, index) => (
+              <li key={`topic-${index}`}>{topic}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-            {!filled && <Rule width={section.width} />}
+      {filled && analysis.recurringThemes.length > 0 && (
+        <div className="zone">
+          <h2 className="zone__label">Recurring themes</h2>
+          <ul className="findings">
+            {analysis.recurringThemes.map((theme, index) => (
+              <li key={`theme-${index}`}>{theme}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-            {filled && section.key === "narrative" && (
-              <p className="report__narrative">{analysis.dominantNarrative}</p>
-            )}
-
-            {filled && items && (
-              <ul className="report__list">
-                {items.map((item, index) => (
-                  <li key={`${section.key}-${index}`}>{item}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
-
-      {filled && analysis.articlesAnalyzed !== null && (
-        <p className="report__provenance">
-          Read across {analysis.articlesAnalyzed} articles returned by Google News.
-        </p>
+      {/* The one block that breaks the label grid, because it is the answer
+          the other two build towards. */}
+      {filled && analysis.dominantNarrative && (
+        <div className="answer">
+          <h2 className="answer__label">Dominant narrative</h2>
+          <p className="answer__text">{analysis.dominantNarrative}</p>
+        </div>
       )}
 
       {/*
@@ -73,9 +61,9 @@ export function AnalysisReport({ analysis, raw, status }: AnalysisReportProps) {
         checked against its source, and so nothing the model said is lost.
       */}
       {filled && raw && (
-        <details className="disclosure">
-          <summary className="disclosure__summary">Show the response as it arrived</summary>
-          <pre className="disclosure__raw">{raw}</pre>
+        <details className="source">
+          <summary className="source__summary">Show the response as it arrived</summary>
+          <pre className="source__raw">{raw}</pre>
         </details>
       )}
     </section>

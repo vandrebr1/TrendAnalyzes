@@ -8,7 +8,8 @@
  *
  * Getting this wrong is quiet rather than loud: a request to a path the gateway
  * does not route falls through to the static handler and comes back as
- * index.html with status 200, which then fails to parse as JSON.
+ * index.html with status 200, which then fails to parse as JSON. That case is
+ * caught below and named, because the HTTP status gives no hint of it.
  *
  * VITE_API_BASE_URL overrides both, for deploying the frontend separately.
  */
@@ -20,7 +21,9 @@ interface GatewayError {
 
 /**
  * Failures the interface can explain. `detail` carries the backend's own
- * message when there is one, for the cases an operator needs to see verbatim.
+ * message when there is one; the error block renders it behind a disclosure,
+ * because on a 502 it is the only thing that separates an unreachable service
+ * from an empty news search.
  */
 export class AnalysisError extends Error {
   readonly detail: string | null;
@@ -43,7 +46,7 @@ async function readGatewayMessage(response: Response): Promise<string | null> {
 
 function explain(status: number, detail: string | null): AnalysisError {
   if (status === 400) {
-    return new AnalysisError("Add at least one subject before running an analysis.", detail);
+    return new AnalysisError("Name at least one subject to read about.", detail);
   }
 
   if (detail?.includes("missing configuration")) {
@@ -55,7 +58,7 @@ function explain(status: number, detail: string | null): AnalysisError {
 
   if (status === 502) {
     return new AnalysisError(
-      "The analysis service could not complete the request. It may be unreachable, or the news search returned nothing usable for these subjects.",
+      "The reading service could not finish. It may be unreachable, or the news search returned nothing usable for these subjects.",
       detail,
     );
   }
@@ -85,10 +88,21 @@ export async function requestAnalysis(keywords: string[], signal?: AbortSignal):
     throw explain(response.status, await readGatewayMessage(response));
   }
 
-  const body = (await response.json()) as { response?: unknown };
+  let body: { response?: unknown };
+
+  try {
+    body = (await response.json()) as { response?: unknown };
+  } catch (error) {
+    // A 200 that is not JSON means the SPA fallback answered instead of the
+    // API, so the request went to a path the gateway does not route.
+    throw new AnalysisError(
+      "The server sent a page instead of a reading, which means the request went to a path it does not serve. If this is a built bundle, check that VITE_API_BASE_URL is unset.",
+      error instanceof Error ? error.message : null,
+    );
+  }
 
   if (typeof body.response !== "string" || body.response.trim().length === 0) {
-    throw new AnalysisError("The server returned an empty analysis. Try running it again.");
+    throw new AnalysisError("The server returned an empty reading. Try running it again.");
   }
 
   return body.response;
