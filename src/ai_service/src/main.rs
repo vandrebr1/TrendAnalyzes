@@ -16,6 +16,7 @@ mod handlers {
 }
 mod model;
 mod ports;
+mod prompts;
 mod routes;
 
 use dotenvy::dotenv;
