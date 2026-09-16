@@ -33,3 +33,6 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+CLAUDE.md
+.claude/skills/frontend-design/LICENSE.txt
+.claude/skills/frontend-design/SKILL.md
