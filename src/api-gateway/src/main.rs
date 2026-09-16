@@ -3,9 +3,7 @@ mod routes;
 mod model;
 mod handlers {
     pub mod ai_chat;
-    pub mod analyzer_api;
     pub mod error;
-    pub mod trend;
 }
 mod clients {
     pub mod ai_service_client;
@@ -22,25 +20,18 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use routes::create_routes;
 
-use handlers::analyzer_api::{AnalyzeRequest, AnalyzeResponse};
 use handlers::error::ApiError;
-use handlers::trend::TrendResponse;
 use model::{AiChatRequest, AiChatResponse};
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        handlers::ai_chat::ai_chat_proxy,
-        handlers::analyzer_api::analyze_proxy,
-        handlers::trend::trend_proxy
+        handlers::ai_chat::ai_chat_proxy
     ),
     components(
         schemas(
-            AnalyzeRequest,
-            AnalyzeResponse,
             AiChatRequest,
             AiChatResponse,
-            TrendResponse,
             ApiError
         )
     )

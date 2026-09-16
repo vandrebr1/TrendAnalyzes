@@ -1,9 +1,9 @@
 use axum::{
     Router,
-    routing::{post, get},
+    routing::post,
 };
 
-use crate::handlers::{ai_chat::ai_chat_proxy, analyzer_api::analyze_proxy, trend::trend_proxy};
+use crate::handlers::ai_chat::ai_chat_proxy;
 
 pub fn create_routes() -> Router {
     Router::new()

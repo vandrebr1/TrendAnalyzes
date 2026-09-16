@@ -43,8 +43,7 @@
       font-size: 1rem;
     }
 
-    #payload-input,
-    #source-select {
+    #payload-input {
       width: 100%;
       border: 1px solid var(--border);
       padding: 10px;
@@ -102,11 +101,6 @@
   ]
 }</textarea>
       <p class="hint">Send this JSON format.</p>
-      <label for="source-select">Source</label>
-      <select id="source-select">
-        <option value="news" selected>News</option>
-        <option value="reddit">Reddit</option>
-      </select>
       <div class="actions">
         <button id="send-btn" type="button">Send</button>
       </div>
@@ -138,7 +132,6 @@
       const API_ENDPOINT = "http://localhost:3000/ai/chat";
 
       const payloadInput = document.getElementById("payload-input");
-      const sourceSelect = document.getElementById("source-select");
       const sendBtn = document.getElementById("send-btn");
 
       const mainTopicsEl = document.getElementById("main-topics");
@@ -170,7 +163,6 @@
 
         try {
           const payload = JSON.parse(payloadInput.value);
-          payload.source = sourceSelect.value;
           const response = await fetch(API_ENDPOINT, {
             method: "POST",
             headers: {

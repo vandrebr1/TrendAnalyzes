@@ -21,15 +21,7 @@ cargo build
 cargo run
 ```
 
-### 2. Start `analyzer-service` (in another terminal)
-
-```powershell
-cd C:\..\TrendAnalyzes\src\analyzer-service
-cargo build
-cargo run
-```
-
-### 3. Start `ai_service` (in another terminal)
+### 2. Start `ai_service` (in another terminal)
 
 ```powershell
 cd C:\..\TrendAnalyzes\src\ai_service
@@ -44,7 +36,6 @@ cargo run
 After both services are running, open:
 
 - http://localhost:3000/swagger
-- http://localhost:3050/swagger
 - http://localhost:3060/swagger
 
 

@@ -1,10 +1,13 @@
-# TrendAnalyzes/Cargo.toml
+[package]
+name = "trend_analyzes"
+version = "0.1.0"
+edition = "2024"
+default-run = "trend_analyzes"
 
 [workspace]
 resolver = "2"
 
 members = [
     "src/api-gateway",
-    "src/analyzer_service",
     "src/ai_service"
 ]

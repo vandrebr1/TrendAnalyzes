@@ -8,20 +8,6 @@ use crate::ports::AiChatService;
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct AiChatRequest {
     pub keywords: Vec<String>,
-    pub source: Option<SearchSource>,
-}
-
-#[derive(Debug, Deserialize, Serialize, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum SearchSource {
-    News,
-    Reddit,
-}
-
-impl Default for SearchSource {
-    fn default() -> Self {
-        Self::News
-    }
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
