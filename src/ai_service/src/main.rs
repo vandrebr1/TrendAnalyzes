@@ -43,9 +43,9 @@ async fn main() -> std::io::Result<()> {
     let config = ServiceConfig::from_env().map_err(std::io::Error::other)?;
 
     let ai_chat_service = AiClient::new(
-        config.capgen_base_url.clone(),
-        config.capgen_api_key.clone(),
-        config.capgen_model.clone(),
+        config.base_url.clone(),
+        config.api_key.clone(),
+        config.model.clone(),
         Arc::new(SearchNewsClient::new()),
     );
 

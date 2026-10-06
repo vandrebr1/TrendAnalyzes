@@ -25,7 +25,7 @@ cargo run
 
 ```powershell
 cd C:\..\TrendAnalyzes\src\ai_service
-# copy .env.example to .env and update CAPGEN_API_KEY
+# copy .env.example to .env and update API_KEY
 # ai_service loads .env automatically on startup
 cargo build
 cargo run
