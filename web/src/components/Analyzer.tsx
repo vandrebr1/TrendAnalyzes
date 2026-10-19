@@ -81,7 +81,7 @@ export function Analyzer() {
             type="text"
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="climate policy, COP30"
+            placeholder="Gold, prices"
             aria-describedby="subject-hint"
             autoComplete="off"
             spellCheck={false}

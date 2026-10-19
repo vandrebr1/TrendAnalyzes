@@ -5,6 +5,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod clients {
+    pub mod agent_client;
     pub mod ai_client;
     pub mod search_news;
 }

@@ -1,20 +1,17 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use reqwest::Client;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use crate::{
+    clients::agent_client::AgentClient,
     handlers::error::AppError,
     ports::{AiChatService, NewsSearcher},
     prompts::{BATCH_ANALYSIS_PROMPT, FINAL_ANALYSIS_PROMPT},
 };
 
 pub struct AiClient {
-    http_client: Client,
-    base_url: String,
-    api_key: String,
-    model: String,
+    agent_client: AgentClient,
     news_searcher: Arc<dyn NewsSearcher>,
 }
 
@@ -26,10 +23,7 @@ impl AiClient {
         news_searcher: Arc<dyn NewsSearcher>,
     ) -> Self {
         Self {
-            http_client: Client::new(),
-            base_url,
-            api_key,
-            model,
+            agent_client: AgentClient::new(base_url, api_key, model),
             news_searcher,
         }
     }
@@ -75,48 +69,9 @@ impl AiClient {
         system_prompt: &str,
         user_content: &str,
     ) -> Result<String, AppError> {
-        let payload = json!({
-            "model": self.model,
-            "max_tokens": 2048,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_content
-                }
-            ]
-        });
-
-        let response = self.send_completion(&payload).await?;
-        response
-            .get("choices")
-            .and_then(|choices| choices.get(0))
-            .and_then(|choice| choice.get("message"))
-            .and_then(|message| message.get("content"))
-            .and_then(Value::as_str)
-            .map(str::to_owned)
-            .ok_or_else(|| {
-                AppError::InvalidUpstream("missing choices[0].message.content".to_owned())
-            })
-    }
-
-    async fn send_completion(&self, payload: &Value) -> Result<Value, AppError> {
-        Ok(self
-            .http_client
-            .post(format!(
-                "{}/chat/completions",
-                self.base_url.trim_end_matches('/')
-            ))
-            .bearer_auth(&self.api_key)
-            .json(payload)
-            .send()
-            .await?
-            .error_for_status()?
-            .json::<Value>()
-            .await?)
+        self.agent_client
+            .complete(system_prompt, user_content)
+            .await
     }
 }
 
@@ -174,9 +129,7 @@ fn append_article_count(analysis: String, article_count: usize) -> Result<String
         ));
     }
 
-    Ok(format!(
-        "{analysis}\n\nArticles analyzed: {article_count}"
-    ))
+    Ok(format!("{analysis}\n\nArticles analyzed: {article_count}"))
 }
 
 fn normalize_heading(line: &str) -> String {
